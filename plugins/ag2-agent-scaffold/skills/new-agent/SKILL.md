@@ -25,7 +25,7 @@ agents/<agent-name>/
 
 ```python
 import json
-from autogen import ConversableAgent
+from autogen import ConversableAgent, LLMConfig
 from autogen.tools import tool
 
 # --- Tool Functions ---
@@ -49,7 +49,7 @@ def tool_name(param1: str, param2: int = 10) -> str:
 
 # --- Agent Definition ---
 agent = ConversableAgent(
-    name="AgentName",
+    name="agent_name",
     description="One-line description for orchestrator routing",
     system_message="""You are a [role description].
 
@@ -62,14 +62,13 @@ Guidelines:
 - Return structured responses
 - Handle errors gracefully and explain what went wrong
 """,
-    llm_config={"model": "gpt-4o-mini"},
+    llm_config=LLMConfig({"api_type": "anthropic", "model": "claude-sonnet-4-6"}),
     functions=[tool_name],
 )
 ```
 
 ### Key Rules
 
-- Tool functions MUST return JSON strings, not dicts or raw values
 - Tool functions MUST have docstrings (used for LLM function calling schema)
 - System messages should be specific about the agent's role and boundaries
 - Agent `description` is used by orchestrators to route tasks -- keep it concise

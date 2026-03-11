@@ -17,9 +17,9 @@ When consulted, analyze the user's requirements and recommend the best approach 
 
 ```python
 agent = ConversableAgent(
-    name="Analyst",
+    name="analyst",
     system_message="You analyze data and provide insights...",
-    llm_config={"model": "gpt-4o-mini"},
+    llm_config=LLMConfig({"api_type": "anthropic", "model": "claude-sonnet-4-6"}),
 )
 ```
 
@@ -32,9 +32,9 @@ agent = ConversableAgent(
 
 ```python
 agent = ConversableAgent(
-    name="DataAgent",
+    name="data_agent",
     system_message="You retrieve and analyze data using your tools...",
-    llm_config={"model": "gpt-4o-mini"},
+    llm_config=LLMConfig({"api_type": "anthropic", "model": "claude-sonnet-4-6"}),
     functions=[search_data, get_record, update_record],
 )
 ```
@@ -87,33 +87,45 @@ Stage 1 --> Stage 2 --> Stage 3 --> Output
 **When NOT to use**: If stages need to loop back or discuss.
 
 ### Pattern 3: Group Chat
-**Use when**: Multiple agents need to collaborate, build on each other's work, or debate.
-**Best for**: Complex problem solving, brainstorming, multi-perspective analysis.
+**Use when**: Multiple agents need to collaborate, build on each other's work, or handle routing/handoffs.
+**Best for**: Complex problem solving, multi-perspective analysis, customer service flows, context-dependent routing.
 
+Group chat uses `run_group_chat` and comes in two sub-patterns:
+
+#### AutoPattern (LLM-driven selection)
+The LLM automatically picks the next agent to speak based on conversation context. No explicit handoffs needed.
+
+```python
+result = run_group_chat(
+    pattern=AutoPattern(agents=[agent_a, agent_b, agent_c]),
+    messages="Solve this problem...",
+    max_rounds=15,
+)
 ```
-     Manager
-    /   |   \
-Agent A  B   C
-(all can talk to each other)
+
+**Good for**: Brainstorming, multi-disciplinary analysis, debate and consensus building.
+
+#### DefaultPattern (Explicit handoffs)
+Agents define explicit handoff conditions using `OnCondition`, `OnContextCondition`, or `ReplyResult` to control routing.
+
+```python
+agent_a.handoffs = [
+    OnCondition(target=agent_b, condition="billing question"),
+    OnCondition(target=agent_c, condition="technical issue"),
+]
+result = run_group_chat(
+    pattern=DefaultPattern(agents=[agent_a, agent_b, agent_c]),
+    messages="I need help with my bill...",
+    max_rounds=15,
+)
 ```
 
-**Speaker selection methods**:
-- `auto`: LLM picks next speaker (most flexible, use by default)
-- `round_robin`: Fixed order (predictable, good for structured reviews)
-- `random`: Non-deterministic (brainstorming)
-- Custom function: Full control over routing logic
+**Good for**: Customer service flows, onboarding wizards, multi-step processes with branching logic, context-dependent routing.
 
-**Key parameters**:
-- `max_round`: Cap conversations (10-15 is usually enough)
-- `is_termination_msg`: Custom function to detect completion
-
-**Good for**:
-- Multi-disciplinary analysis (researcher + analyst + writer)
-- Debate and consensus building
-- Complex problem decomposition
+**Key parameter**: `max_rounds` caps the conversation (10-15 is usually enough).
 
 **Pitfalls**:
-- More than 5 agents makes speaker selection unreliable
+- More than 5 agents makes selection unreliable (for AutoPattern)
 - Without clear termination, conversations can loop indefinitely
 - Each agent must have a distinct role -- overlapping roles cause confusion
 
@@ -137,22 +149,8 @@ Specialist  Specialist  Specialist
 - Multi-domain expert consultation
 - Parallel information gathering
 
-### Pattern 5: Swarm (Dynamic Handoffs)
-**Use when**: Agents need to transfer control based on conversation context.
-**Best for**: Customer service flows, multi-step wizards, stateful processes.
-
-```
-Agent A --handoff--> Agent B --handoff--> Agent C
-(based on conversation state)
-```
-
-**Mechanism**: Handoff functions registered on agents determine when to transfer.
-**State**: Shared context dictionary passed between agents.
-
-**Good for**:
-- Customer service (triage -> billing -> technical support)
-- Onboarding flows (collect info -> validate -> provision)
-- Multi-step processes with branching logic
+### ~~Pattern 5: Swarm~~ (Deprecated)
+**Note**: The Swarm pattern has been deprecated and replaced by **DefaultPattern** with handoffs in the modern group chat system. Use `run_group_chat` with `DefaultPattern` and `OnCondition`/`OnContextCondition` handoffs instead. See Pattern 3 (Group Chat / DefaultPattern) above for the equivalent functionality.
 
 ## Design Principles
 
@@ -190,8 +188,7 @@ Every workflow MUST have:
 ### 6. Tool Discipline
 - Under 8 tools per agent
 - Each tool does ONE thing
-- Tools return structured JSON, never raw text
-- Tools never raise exceptions -- always return error JSON
+- Tools can return strings, JSON strings, Pydantic models, or ReplyResult (for group chat routing). The framework handles uncaught exceptions automatically.
 - Tool docstrings are critical -- they ARE the API documentation for the LLM
 
 ## Decision Matrix
@@ -204,7 +201,7 @@ When a user describes their use case, use this matrix:
 | Step-by-step processing | 2-4 | Sequential Pipeline | Clean data flow |
 | Collaborative problem solving | 3-5 | Group Chat | Multi-perspective |
 | Expert consultation | 1 coordinator + 2-4 specialists | Nested Chats | Focused sub-tasks |
-| Context-dependent routing | 2-5 | Swarm | Dynamic handoffs |
+| Context-dependent routing | 2-5 | Group Chat (DefaultPattern) | Explicit handoffs via OnCondition |
 | Single task with API access | 1 | Tool-Augmented Agent | Keep it simple |
 | Pure reasoning/writing | 1 | LLM-Only Agent | No tools needed |
 
@@ -215,5 +212,5 @@ When a user describes their use case, use this matrix:
 3. **Missing termination**: Agents loop forever without explicit stop conditions
 4. **Tool explosion**: 15+ tools on one agent -- LLM can't reliably select
 5. **Ignoring cost**: Group chats with 5 agents and 20 rounds = expensive
-6. **No error handling**: Tools that raise exceptions crash the entire workflow
+6. **No error handling**: Tools should handle expected errors gracefully (the framework catches uncaught exceptions, but explicit handling gives better error messages)
 7. **Overlapping roles**: Two agents that do similar things confuse the speaker selector

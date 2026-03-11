@@ -27,7 +27,7 @@ agents/<agent-name>/
 ```python
 import json
 import os
-from autogen import ConversableAgent
+from autogen import ConversableAgent, LLMConfig
 from autogen.tools import tool
 from a2a_agent_server import A2aAgentServer, CardSettings, Skill
 
@@ -51,7 +51,7 @@ def example_tool(query: str) -> str:
 # --- Agent Definition ---
 
 agent = ConversableAgent(
-    name="AgentName",
+    name="agent_name",
     description="One-line description for discovery and routing",
     system_message="""You are a [role] specialist.
 
@@ -63,7 +63,7 @@ When using tools:
 - If a tool fails, explain the error clearly to the user
 - Never fabricate data -- only report what tools return
 """,
-    llm_config={"model": "gpt-4o-mini"},
+    llm_config=LLMConfig({"api_type": "anthropic", "model": "claude-sonnet-4-6"}),
     functions=[example_tool],
 )
 
