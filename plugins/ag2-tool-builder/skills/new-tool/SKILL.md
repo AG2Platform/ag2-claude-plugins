@@ -48,11 +48,12 @@ def tool_name(required_param: str, optional_param: int = 10) -> str:
 
 ### Tool Contract Rules
 
-**Return format**: Always a JSON string with this structure:
-```json
-{"success": true, "data": { ... }}
-{"success": false, "error": "Human-readable error message"}
-```
+**Return types**: Tool functions can return:
+- `str` -- plain text or JSON strings
+- `pydantic.BaseModel` -- automatically serialized by the framework
+- `ReplyResult` -- for group chat tool-based handoffs (includes `target` for routing)
+
+The JSON `{"success": true, "data": ...}` pattern shown above is a good convention for structured tools but is NOT required.
 
 **Type annotations**: All parameters MUST have type annotations. The LLM uses these to construct calls.
 
@@ -68,29 +69,18 @@ def tool_name(required_param: str, optional_param: int = 10) -> str:
 - Limit to 5 parameters max -- split into multiple tools if more needed
 
 **Error handling**:
-- Never raise exceptions -- always return error JSON
-- Catch specific exceptions before generic `Exception`
+- The AG2 framework catches all uncaught tool exceptions automatically and converts them to `"Error: {message}"` strings
+- Catching exceptions in tools is good practice for custom error messages but NOT required
 - Error messages should help the LLM retry or explain to the user
 - For missing credentials: return `{"success": false, "error": "connector_setup_required:<connector_id>"}`
 
 ### Anti-Patterns to Avoid
 
 ```python
-# BAD: Returns dict instead of JSON string
-@tool()
-def bad_tool(x: str) -> dict:
-    return {"result": x}
-
 # BAD: No type annotations
 @tool()
 def bad_tool(x):
     return json.dumps({"success": True})
-
-# BAD: Raises exception instead of returning error
-@tool()
-def bad_tool(x: str) -> str:
-    result = api_call(x)  # Can raise!
-    return json.dumps({"success": True, "data": result})
 
 # BAD: No docstring
 @tool()

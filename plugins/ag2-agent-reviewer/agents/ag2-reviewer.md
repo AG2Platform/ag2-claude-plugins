@@ -11,8 +11,6 @@ You are an expert reviewer of AG2 (AutoGen) agent implementations. When asked to
 ### Critical Issues (must fix)
 
 **Tool Contract Violations**:
-- Tool functions must return `str` (JSON string), not `dict` or other types
-- Return format must be `{"success": bool, "data": ...}` or `{"success": bool, "error": "..."}`
 - All tool parameters must have type annotations
 - All tool functions must have docstrings with `Args:` section
 
@@ -30,7 +28,7 @@ You are an expert reviewer of AG2 (AutoGen) agent implementations. When asked to
 ### Important Issues (should fix)
 
 **Agent Configuration**:
-- `name` should be PascalCase and descriptive
+- `name` should be snake_case (lowercase with underscores) and descriptive
 - `description` should be a concise one-liner (used for routing/discovery)
 - `system_message` should clearly define role, capabilities, and boundaries
 - `llm_config` should specify a model explicitly (no implicit defaults)
