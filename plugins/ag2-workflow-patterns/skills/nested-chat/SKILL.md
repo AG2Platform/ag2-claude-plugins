@@ -55,9 +55,24 @@ step_3 = ConversableAgent(
 # Register the nested pipeline -- fires when coordinator receives from user
 coordinator.register_nested_chats(
     chat_queue=[
-        {"recipient": step_1, "max_turns": 1, "summary_method": "last_msg"},
-        {"recipient": step_2, "max_turns": 1, "summary_method": "last_msg"},
-        {"recipient": step_3, "max_turns": 1, "summary_method": "last_msg"},
+        {
+            "recipient": step_1,
+            "message": lambda recipient, messages, sender, config: messages[-1]["content"],
+            "max_turns": 1,
+            "summary_method": "last_msg",
+        },
+        {
+            "recipient": step_2,
+            "message": "Continue with the second step.",
+            "max_turns": 1,
+            "summary_method": "last_msg",
+        },
+        {
+            "recipient": step_3,
+            "message": "Complete the third step.",
+            "max_turns": 1,
+            "summary_method": "last_msg",
+        },
     ],
     trigger=user,  # fires when message comes from user
 )
@@ -69,7 +84,8 @@ async def main():
         message="Your task here",
         max_turns=1,
     )
-    print(response.process())
+    await response.process()
+    print(await response.summary)
 
 
 if __name__ == "__main__":
@@ -79,11 +95,14 @@ if __name__ == "__main__":
 ### Key Rules
 
 - Use `register_nested_chats` to define the pipeline on the outer agent
+- Each chat in `chat_queue` MUST have a `message` field -- without it, subsequent stages won't fire
+- The first stage should use a callable `message` to forward the original user request: `lambda recipient, messages, sender, config: messages[-1]["content"]`
+- Subsequent stages can use static `message` strings -- the previous stage's output is automatically appended as context
 - Each chat in `chat_queue` runs sequentially -- output of one feeds into the next
 - Use `max_turns=1` per stage for clean handoffs
 - `summary_method="last_msg"` passes the last message as input to the next stage
 - The `trigger` parameter controls which sender activates the nested pipeline
-- Use `a_run` (async) with `.process()` -- NOT `initiate_chat`
+- Use `a_run` (async) with `.process()` then `.summary` -- NOT `initiate_chat`
 - Use `LLMConfig({...})` -- NOT a raw dict like `{"model": "..."}`
 
 ### When to Use This Pattern

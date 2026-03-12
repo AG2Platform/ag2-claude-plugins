@@ -41,7 +41,8 @@ async def main():
         max_turns=2,
         summary_method="reflection_with_llm",
     )
-    print(response.process())
+    await response.process()
+    print(await response.summary)
 
 
 if __name__ == "__main__":
@@ -50,7 +51,7 @@ if __name__ == "__main__":
 
 ### Key Rules
 
-- Use `a_run` (async) with `.process()` -- NOT `initiate_chat`
+- Use `a_run` (async) with `.process()` then `.summary` -- NOT `initiate_chat`
 - `max_turns` controls conversation rounds (each turn = both agents speak)
 - `summary_method="reflection_with_llm"` generates a summary; use `"last_msg"` for the raw last message
 - Use `LLMConfig({...})` -- NOT a raw dict like `{"model": "..."}`

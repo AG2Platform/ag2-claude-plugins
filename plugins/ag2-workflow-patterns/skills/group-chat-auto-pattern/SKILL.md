@@ -50,11 +50,13 @@ pattern = AutoPattern(
     user_agent=user,
 )
 
-result, final_context, last_agent = run_group_chat(
+result = run_group_chat(
     pattern=pattern,
     messages="Your task here",
     max_rounds=15,
 )
+result.process()
+print(result.summary)
 ```
 
 ### Key Rules

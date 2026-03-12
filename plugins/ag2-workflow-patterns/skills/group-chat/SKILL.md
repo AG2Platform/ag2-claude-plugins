@@ -85,11 +85,15 @@ pattern = DefaultPattern(
     context_variables=shared_context,
 )
 
-result, final_context, last_agent = run_group_chat(
+result = run_group_chat(
     pattern=pattern,
     messages="Your task here",
     max_rounds=30,
 )
+result.process()
+print(result.summary)
+# result.context_variables has the final shared state
+# result.last_speaker has the last agent's name
 ```
 
 ---

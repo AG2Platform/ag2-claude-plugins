@@ -63,7 +63,7 @@ Architecture advisors for AG2 agent systems.
 
 | Agent | Description |
 |-------|-------------|
-| `ag2-architect` | Recommends orchestration patterns (group chat, pipeline, swarm, etc.) based on your use case |
+| `ag2-architect` | Recommends orchestration patterns (group chat, pipeline, handoffs, etc.) based on your use case |
 | `ag2-prompt-engineer` | Crafts and reviews system prompts for maximum agent reliability |
 
 ## Pattern Quick Reference
@@ -75,7 +75,7 @@ Architecture advisors for AG2 agent systems.
 | Step-by-step processing | Sequential pipeline | ag2-workflow-patterns |
 | Collaborative problem solving | Group chat | ag2-workflow-patterns |
 | Expert consultation | Nested chats (hub-and-spoke) | ag2-workflow-patterns |
-| Context-dependent routing | Swarm with handoffs | ag2-workflow-patterns |
+| Context-dependent routing | Group chat (DefaultPattern with handoffs) | ag2-workflow-patterns |
 | Deployable A2A service | A2A agent server | ag2-agent-scaffold |
 
 ## AG2 Resources
