@@ -71,7 +71,8 @@ async def main():
     responses = await initiator.a_sequential_run(chat_queue)
 
     for i, response in enumerate(responses):
-        print(f"Stage {i + 1}: {response.process()}")
+        await response.process()
+        print(f"Stage {i + 1}: {await response.summary}")
 
 
 if __name__ == "__main__":
@@ -81,7 +82,7 @@ if __name__ == "__main__":
 ### Key Rules
 
 - Use `a_sequential_run` (async) -- NOT chained `initiate_chat` calls
-- Use `.process()` to extract the result from each response
+- Call `.process()` to run the workflow, then use `.summary` to extract the result
 - Use `max_turns=1` per stage for clean handoffs
 - `summary_method="last_msg"` passes output forward through the pipeline
 - The `message` in each queue entry can provide stage-specific instructions

@@ -71,11 +71,13 @@ response = await agent_a.a_run(
 For group chats, use `max_rounds` on `run_group_chat`:
 
 ```python
-result, context, last_agent = run_group_chat(
+result = run_group_chat(
     pattern=pattern,
     messages="Your task",
     max_rounds=15,
 )
+result.process()
+print(result.summary)
 ```
 
 ### 2. TerminateTarget (Group Chat)
@@ -148,11 +150,12 @@ Use the modern async APIs:
 | Nested | `agent.register_nested_chats(chat_queue, trigger=...)` | Pipeline inside one agent |
 | Group chat | `run_group_chat(pattern=..., messages=..., max_rounds=...)` | Multi-agent with patterns |
 
-Use `.process()` on the response to extract results:
+Call `.process()` to run the workflow, then access `.summary` for the result:
 
 ```python
 response = await agent_a.a_run(agent_b, message="Hello", max_turns=2)
-print(response.process())
+await response.process()        # processes events, returns None
+print(await response.summary)   # async property -- must await
 ```
 
 ## Summary Methods
